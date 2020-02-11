@@ -2,6 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 namespace BGChanger
@@ -10,21 +11,12 @@ namespace BGChanger
     {
         const string DefaultBackground = @"C:\Windows\Web\Wallpaper\Windows\img0.jpg";
         const string DefaultSolidColor = "0 0 0";
+        const string DefaultSlideshowDirectory = @"C:\Windows\Web\Wallpaper\Theme1";
         const BackgroundStyle DefaultBackgroundStyle = BackgroundStyle.Center;
         const SlideshowDuration DefaultSlideshowDuration = SlideshowDuration.TenMinutes;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int SystemParametersInfo(uint action, uint uParam, string vParam, uint winIni);
-
-        private static void CheckIsAdmin()
-        {
-            var isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
-
-            if (!isAdmin)
-            {
-                throw new UnauthorizedAccessException();
-            }
-        }
 
         private static void CheckBackground(string background)
         {
@@ -42,15 +34,50 @@ namespace BGChanger
 
             if (extension != ".jpg" && extension != ".jpeg" && extension != ".png")
             {
-                throw new ArgumentOutOfRangeException(nameof(background), "The background should be a JPEG or PNG.");
+                throw new ArgumentOutOfRangeException(nameof(background), background, "The background should be a JPG, JPEG or PNG.");
             }
         }
 
-        private static void CheckSolidColor(string color)
+        private static void CheckColor(string color)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(color))
+            {
+                throw new ArgumentNullException(nameof(color));
+            }
+
+            // TODO: Make the regular expression more robust.
+            var regex = new Regex(@"\d{1,3} \d{1,3} \d{1,3}");
+            var match = regex.Match(color);
+
+            if (!match.Success)
+            {
+                throw new ArgumentOutOfRangeException(nameof(color), color, $"The color should match this {regex.ToString()} regular expression.");
+            }
         }
 
+        private static void CheckIsAdmin()
+        {
+            var isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+
+            if (!isAdmin)
+            {
+                throw new UnauthorizedAccessException();
+            }
+        }
+
+        private static void CheckSlideshowDirectory(string directory)
+        {
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                throw new ArgumentNullException(nameof(directory));
+            }
+
+            if (!Directory.Exists(directory))
+            {
+                throw new DirectoryNotFoundException();
+            }
+        }
+        
         public static void ResetCurrentBackground()
         {
             SetCurrentBackground();
@@ -66,7 +93,7 @@ namespace BGChanger
         public static void SetCurrentBackground(string background = DefaultBackground, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
         {
             CheckBackground(background);
-            CheckSolidColor(color);
+            CheckColor(color);
 
             background = Path.GetFullPath(background);
 
@@ -112,7 +139,7 @@ namespace BGChanger
 
         public static void SetCurrentSolidColor(string color = DefaultSolidColor)
         {
-            CheckSolidColor(color);
+            CheckColor(color);
 
             var key1 = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", writable: true);
             key1?.DeleteValue(@"WallPaper");
@@ -123,9 +150,10 @@ namespace BGChanger
             key2?.Close();
         }
 
-        public static void SetCurrentSlideshow(string directory, SlideshowDuration duration = DefaultSlideshowDuration, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
+        public static void SetCurrentSlideshow(string directory = DefaultSlideshowDirectory, SlideshowDuration duration = DefaultSlideshowDuration, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
         {
-            CheckSolidColor(color);
+            CheckSlideshowDirectory(directory);
+            CheckColor(color);
 
             throw new NotImplementedException();
         }
@@ -134,7 +162,7 @@ namespace BGChanger
         {
             CheckIsAdmin();
             CheckBackground(background);
-            CheckSolidColor(color);
+            CheckColor(color);
 
             background = Path.GetFullPath(background);
 
@@ -144,15 +172,16 @@ namespace BGChanger
         public static void SetMachineSolidColor(string color = DefaultSolidColor)
         {
             CheckIsAdmin();
-            CheckSolidColor(color);
+            CheckColor(color);
 
             throw new NotImplementedException();
         }
 
-        public static void SetMachineSlideshow(string directory, SlideshowDuration duration = DefaultSlideshowDuration, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
+        public static void SetMachineSlideshow(string directory = DefaultSlideshowDirectory, SlideshowDuration duration = DefaultSlideshowDuration, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
         {
             CheckIsAdmin();
-            CheckSolidColor(color);
+            CheckSlideshowDirectory(directory);
+            CheckColor(color);
 
             throw new NotImplementedException();
         }
