@@ -16,7 +16,7 @@ namespace BGChanger
         /// <summary>
         /// </summary>
         [DllImport("user32.dll")]
-        public static extern bool SetSysColors(int cElements, int[] lpaElements, int[] lpaRgbValues);
+        private static extern bool SetSysColors(int cElements, int[] lpaElements, int[] lpaRgbValues);
         
         /// <summary>
         /// </summary>
@@ -169,8 +169,6 @@ namespace BGChanger
         /// <param name="color">The fallback color to be used.</param>
         public static void SetSlideshowBackground(string directory = @"C:\Windows\Web\Wallpaper\Theme1", int interval = 600000, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = BackgroundStyle.Center, Color color = default)
         {
-            throw new NotImplementedException();
-            
             CheckSlideshowDirectory(directory);
 
             var slideshowIniFile = Path.Combine(
@@ -191,6 +189,8 @@ namespace BGChanger
             var key2 = Registry.CurrentUser.OpenSubKey(@"Control Panel\Personalization\Desktop Slideshow", writable: true);
             key2?.SetValue("Interval", interval, RegistryValueKind.DWord);
             key2?.SetValue("Shuffle", (shuffle) ? 1 : 0, RegistryValueKind.DWord);
+            
+            throw new NotImplementedException();
         }
     }
 }
