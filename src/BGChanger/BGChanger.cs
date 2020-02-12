@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 namespace BGChanger
@@ -12,12 +13,13 @@ namespace BGChanger
     /// </summary>
     public static class BGChanger
     {
-        private const string DefaultBackground = @"C:\Windows\Web\Wallpaper\Windows\img0.jpg";
-        private const BackgroundStyle DefaultBackgroundStyle = BackgroundStyle.Center;
-        private const string DefaultSolidColor = "0 0 0";
-        private const string DefaultSlideshowDirectory = @"C:\Windows\Web\Wallpaper\Theme1";
-        private const int DefaultSlideshowInterval = 600000;
-
+        /// <summary>
+        /// </summary>
+        [DllImport("user32.dll")]
+        public static extern bool SetSysColors(int cElements, int[] lpaElements, int[] lpaRgbValues);
+        
+        /// <summary>
+        /// </summary>
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int SystemParametersInfo(uint action, uint uParam, string vParam, uint winIni);
 
@@ -39,30 +41,9 @@ namespace BGChanger
 
             var extension = Path.GetExtension(background).ToLower();
 
-            if (extension != ".jpg" && extension != ".jpeg" && extension != ".png")
+            if (extension != ".bmp" && extension != ".jpg" && extension != ".jpeg" && extension != ".png")
             {
-                throw new ArgumentOutOfRangeException(nameof(background), background, "The background should be a JPG, JPEG or PNG.");
-            }
-        }
-
-        /// <summary>
-        /// Check if the provided color is valid.
-        /// </summary>
-        /// <param name="color">The color string to be checked.</param>
-        private static void CheckColor(string color)
-        {
-            if (string.IsNullOrWhiteSpace(color))
-            {
-                throw new ArgumentNullException(nameof(color));
-            }
-
-            // TODO: Make the regular expression more robust.
-            var regex = new Regex(@"\d{1,3} \d{1,3} \d{1,3}");
-            var match = regex.Match(color);
-
-            if (!match.Success)
-            {
-                throw new ArgumentOutOfRangeException(nameof(color), color, $"The color should match this {regex} regular expression.");
+                throw new ArgumentOutOfRangeException(nameof(background), background, "The background should be a BMP, JPG, JPEG or PNG.");
             }
         }
 
@@ -109,11 +90,10 @@ namespace BGChanger
         /// </summary>
         /// <param name="background">The background file path to be used.</param>
         /// <param name="style">The background style to be used.</param>
-        /// <param name="color">The fallback color string to be used.</param>
-        public static void SetPictureBackground(string background = DefaultBackground, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
+        /// <param name="color">The fallback color to be used.</param>
+        public static void SetPictureBackground(string background = @"C:\Windows\Web\Wallpaper\Windows\img0.jpg", BackgroundStyle style = BackgroundStyle.Center, Color color = default)
         {
             CheckBackground(background);
-            CheckColor(color);
 
             background = Path.GetFullPath(background);
 
@@ -151,42 +131,47 @@ namespace BGChanger
             key1?.Close();
 
             var key2 = Registry.CurrentUser.OpenSubKey(@"Control Panel\Colors", writable: true);
-            key2?.SetValue(@"Background", color, RegistryValueKind.String);
+            key2?.SetValue(@"Background", string.Format(CultureInfo.InvariantCulture, "{0} {1} {2}", color.R, color.G, color.B), RegistryValueKind.String);
             key2?.Close();
-
+            
+            // Set the new desktop background for the current session.
             SystemParametersInfo(0x14, 0, background, 0x01 | 0x02);
         }
-        
+
         /// <summary>
         /// Set a solid color as the desktop background.
         /// </summary>
-        /// <param name="color">The color string to be used.</param>
-        public static void SetSolidColorBackground(string color = DefaultSolidColor)
+        /// <param name="color">The color to be used.</param>
+        public static void SetSolidColorBackground(Color color = default)
         {
-            CheckColor(color);
-
             var key1 = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", writable: true);
-            key1?.DeleteValue(@"WallPaper");
+            key1?.DeleteValue(@"WallPaper", throwOnMissingValue: false);
             key1?.Close();
 
             var key2 = Registry.CurrentUser.OpenSubKey(@"Control Panel\Colors", writable: true);
-            key2?.SetValue(@"Background", color, RegistryValueKind.String);
+            key2?.SetValue(@"Background", string.Format(CultureInfo.InvariantCulture, "{0} {1} {2}", color.R, color.G, color.B), RegistryValueKind.String);
             key2?.Close();
+
+            // Set the new desktop solid color for the current session.
+            int[] elements = { 1 };
+            int[] colors = { ColorTranslator.ToWin32(color) };
+            SetSysColors(elements.Length, elements, colors);
         }
 
         /// <summary>
-        /// WIP: Set a slideshow as the desktop background.
+        /// Set a slideshow as the desktop background.
         /// </summary>
         /// <param name="directory"></param>
         /// <param name="interval">Interval to change pictures, can be any number of milliseconds.</param>
         /// <param name="shuffle"></param>
         /// <param name="runOnBattery"></param>
         /// <param name="style">The background style to be used.</param>
-        /// <param name="color">The fallback color string to be used.</param>
-        public static void SetSlideshowBackground(string directory = DefaultSlideshowDirectory, int interval = DefaultSlideshowInterval, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
+        /// <param name="color">The fallback color to be used.</param>
+        public static void SetSlideshowBackground(string directory = @"C:\Windows\Web\Wallpaper\Theme1", int interval = 600000, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = BackgroundStyle.Center, Color color = default)
         {
+            throw new NotImplementedException();
+            
             CheckSlideshowDirectory(directory);
-            CheckColor(color);
 
             var slideshowIniFile = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -206,8 +191,6 @@ namespace BGChanger
             var key2 = Registry.CurrentUser.OpenSubKey(@"Control Panel\Personalization\Desktop Slideshow", writable: true);
             key2?.SetValue("Interval", interval, RegistryValueKind.DWord);
             key2?.SetValue("Shuffle", (shuffle) ? 1 : 0, RegistryValueKind.DWord);
-            
-            throw new NotImplementedException();
         }
     }
 }
