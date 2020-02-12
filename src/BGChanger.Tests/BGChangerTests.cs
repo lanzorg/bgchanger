@@ -8,13 +8,13 @@ namespace BGChanger.Tests
     {
         public void Dispose()
         {
-            BGChanger.ResetCurrentBackground();
+            BGChanger.ResetBackground();
         }
 
         [Fact]
         public void Using_non_existent_background_file_should_throw_an_exception()
         {
-            Assert.Throws<FileNotFoundException>(() => BGChanger.SetCurrentBackground(Guid.NewGuid().ToString()));
+            Assert.Throws<FileNotFoundException>(() => BGChanger.SetPictureBackground(Guid.NewGuid().ToString()));
         }
 
         [Theory]
@@ -27,15 +27,15 @@ namespace BGChanger.Tests
         // [InlineData("256 256 256")]
         public void Using_an_invalid_color_string_should_throw_an_exception(string value)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => BGChanger.SetCurrentBackground(color: value));
-            Assert.Throws<ArgumentOutOfRangeException>(() => BGChanger.SetCurrentSolidColor(value));
-            Assert.Throws<ArgumentOutOfRangeException>(() => BGChanger.SetCurrentSlideshow(color: value));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BGChanger.SetPictureBackground(color: value));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BGChanger.SetSolidColorBackground(value));
+            Assert.Throws<ArgumentOutOfRangeException>(() => BGChanger.SetSlideshowBackground(color: value));
         }
 
         [Fact]
         public void Using_non_existent_background_directory_should_throw_an_exception()
         {
-            Assert.Throws<DirectoryNotFoundException>(() => BGChanger.SetCurrentSlideshow(Guid.NewGuid().ToString()));
+            Assert.Throws<DirectoryNotFoundException>(() => BGChanger.SetSlideshowBackground(Guid.NewGuid().ToString()));
         }
     }
 }

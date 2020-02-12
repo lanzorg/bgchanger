@@ -7,17 +7,24 @@ using Microsoft.Win32;
 
 namespace BGChanger
 {
+    /// <summary>
+    /// Change the Windows background settings.
+    /// </summary>
     public static class BGChanger
     {
-        const string DefaultBackground = @"C:\Windows\Web\Wallpaper\Windows\img0.jpg";
-        const string DefaultSolidColor = "0 0 0";
-        const string DefaultSlideshowDirectory = @"C:\Windows\Web\Wallpaper\Theme1";
-        const BackgroundStyle DefaultBackgroundStyle = BackgroundStyle.Center;
-        const SlideshowDuration DefaultSlideshowDuration = SlideshowDuration.TenMinutes;
+        private const string DefaultBackground = @"C:\Windows\Web\Wallpaper\Windows\img0.jpg";
+        private const BackgroundStyle DefaultBackgroundStyle = BackgroundStyle.Center;
+        private const string DefaultSolidColor = "0 0 0";
+        private const string DefaultSlideshowDirectory = @"C:\Windows\Web\Wallpaper\Theme1";
+        private const int DefaultSlideshowInterval = 600000;
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int SystemParametersInfo(uint action, uint uParam, string vParam, uint winIni);
 
+        /// <summary>
+        /// Check if the provided background is valid.
+        /// </summary>
+        /// <param name="background">The background file path to be checked.</param>
         private static void CheckBackground(string background)
         {
             if (string.IsNullOrWhiteSpace(background))
@@ -38,6 +45,10 @@ namespace BGChanger
             }
         }
 
+        /// <summary>
+        /// Check if the provided color is valid.
+        /// </summary>
+        /// <param name="color">The color string to be checked.</param>
         private static void CheckColor(string color)
         {
             if (string.IsNullOrWhiteSpace(color))
@@ -51,10 +62,13 @@ namespace BGChanger
 
             if (!match.Success)
             {
-                throw new ArgumentOutOfRangeException(nameof(color), color, $"The color should match this {regex.ToString()} regular expression.");
+                throw new ArgumentOutOfRangeException(nameof(color), color, $"The color should match this {regex} regular expression.");
             }
         }
 
+        /// <summary>
+        /// Check if the current user has the administrator role.
+        /// </summary>
         private static void CheckIsAdmin()
         {
             var isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
@@ -65,6 +79,10 @@ namespace BGChanger
             }
         }
 
+        /// <summary>
+        /// Checks if the provided directory can be used as a slideshow directory.
+        /// </summary>
+        /// <param name="directory">The directory path to be checked.</param>
         private static void CheckSlideshowDirectory(string directory)
         {
             if (string.IsNullOrWhiteSpace(directory))
@@ -77,20 +95,22 @@ namespace BGChanger
                 throw new DirectoryNotFoundException();
             }
         }
+
+        /// <summary>
+        /// Reset the default Windows desktop background.
+        /// </summary>
+        public static void ResetBackground()
+        {
+            SetPictureBackground();
+        }
         
-        public static void ResetCurrentBackground()
-        {
-            SetCurrentBackground();
-        }
-
-        public static void ResetMachineBackground()
-        {
-            CheckIsAdmin();
-
-            throw new NotImplementedException();
-        }
-
-        public static void SetCurrentBackground(string background = DefaultBackground, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
+        /// <summary>
+        /// Set a picture as the desktop background.
+        /// </summary>
+        /// <param name="background">The background file path to be used.</param>
+        /// <param name="style">The background style to be used.</param>
+        /// <param name="color">The fallback color string to be used.</param>
+        public static void SetPictureBackground(string background = DefaultBackground, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
         {
             CheckBackground(background);
             CheckColor(color);
@@ -136,8 +156,12 @@ namespace BGChanger
 
             SystemParametersInfo(0x14, 0, background, 0x01 | 0x02);
         }
-
-        public static void SetCurrentSolidColor(string color = DefaultSolidColor)
+        
+        /// <summary>
+        /// Set a solid color as the desktop background.
+        /// </summary>
+        /// <param name="color">The color string to be used.</param>
+        public static void SetSolidColorBackground(string color = DefaultSolidColor)
         {
             CheckColor(color);
 
@@ -150,39 +174,39 @@ namespace BGChanger
             key2?.Close();
         }
 
-        public static void SetCurrentSlideshow(string directory = DefaultSlideshowDirectory, SlideshowDuration duration = DefaultSlideshowDuration, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
+        /// <summary>
+        /// WIP: Set a slideshow as the desktop background.
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="interval">Interval to change pictures, can be any number of milliseconds.</param>
+        /// <param name="shuffle"></param>
+        /// <param name="runOnBattery"></param>
+        /// <param name="style">The background style to be used.</param>
+        /// <param name="color">The fallback color string to be used.</param>
+        public static void SetSlideshowBackground(string directory = DefaultSlideshowDirectory, int interval = DefaultSlideshowInterval, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
         {
             CheckSlideshowDirectory(directory);
             CheckColor(color);
 
-            throw new NotImplementedException();
-        }
+            var slideshowIniFile = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                @"Microsoft\Windows\Themes\slideshow.ini"
+            );
+            var encryptedPath = "";
 
-        public static void SetMachineBackground(string background = DefaultBackground, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
-        {
-            CheckIsAdmin();
-            CheckBackground(background);
-            CheckColor(color);
+            // Write information into the slideshow.ini file.
+            File.Delete(slideshowIniFile);
+            File.Create(slideshowIniFile);
+            using (var sw = File.CreateText(slideshowIniFile)) 
+            {
+                sw.WriteLine(@"[Slideshow]");
+                sw.WriteLine($"ImagesRootPIDL={encryptedPath}");
+            }	
 
-            background = Path.GetFullPath(background);
-
-            throw new NotImplementedException();
-        }
-
-        public static void SetMachineSolidColor(string color = DefaultSolidColor)
-        {
-            CheckIsAdmin();
-            CheckColor(color);
-
-            throw new NotImplementedException();
-        }
-
-        public static void SetMachineSlideshow(string directory = DefaultSlideshowDirectory, SlideshowDuration duration = DefaultSlideshowDuration, bool shuffle = false, bool runOnBattery = false, BackgroundStyle style = DefaultBackgroundStyle, string color = DefaultSolidColor)
-        {
-            CheckIsAdmin();
-            CheckSlideshowDirectory(directory);
-            CheckColor(color);
-
+            var key2 = Registry.CurrentUser.OpenSubKey(@"Control Panel\Personalization\Desktop Slideshow", writable: true);
+            key2?.SetValue("Interval", interval, RegistryValueKind.DWord);
+            key2?.SetValue("Shuffle", (shuffle) ? 1 : 0, RegistryValueKind.DWord);
+            
             throw new NotImplementedException();
         }
     }
