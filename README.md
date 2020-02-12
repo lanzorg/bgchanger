@@ -12,10 +12,10 @@
 
 ```cs
 // Set a picture as the desktop background.
-BGChanger.SetPictureBackground(@"C:\Users\bg.png", BackgroundStyle.Stretch, "255 255 255");
+BGChanger.SetPictureBackground(@"C:\Users\bg.png", BackgroundStyle.Stretch);
 
 // Set a solid color as the desktop background.
-BGChanger.SetSolidColorBackground("255 255 255");
+BGChanger.SetSolidColorBackground(Color.Black);
 
 // Reset the default Windows desktop background.
 BGChanger.ResetBackground();
