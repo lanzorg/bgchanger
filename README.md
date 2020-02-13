@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/lanzorg/bgchanger">
-    <img height="250" src="./logo.svg" alt="logo">
+    <img height="200" src="./logo.svg" alt="logo">
   </a>
 </p>
 
