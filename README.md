@@ -1,12 +1,15 @@
-<p align="center">
-  <a href="https://github.com/lanzorg/bgchanger">
-    <img height="200" src="./logo.svg" alt="logo">
-  </a>
-</p>
-
-<h1 align="center">BGChanger</h1>
-
-<p align="center">Change the Windows background settings.</p>
+<table>
+  <tr>
+    <td width="9999px" align="center">
+      <p>
+        <br>
+        <img height="200" src="./logo.svg" alt="logo">
+      </p>
+      <h1>bgchanger</h1>
+      <p>Change the Windows background settings.</p>
+    </td>
+  </tr>
+</table>
 
 ## Usage
 
